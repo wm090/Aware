@@ -5,6 +5,7 @@
       "expo-router"
     ],
     "name": "Aware",
-    "slug": "Aware"
+    "slug": "Aware",
+    "newArchEnabled": true
   }
 }
