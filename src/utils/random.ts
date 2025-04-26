@@ -9,11 +9,11 @@ export const randomBetween = (min: number, max: number): number => {
 // Generate a random position ONLY from the edges of the screen
 export const randomEdgePosition = (width: number, height: number): Position => {
   // Define a larger offset to ensure arrows spawn outside the visible area on all devices
-  const offset = 150; // 150 pixels outside the screen
+  const offset = 300; // 150 pixels outside the screen
 
   // Only spawn from the 4 edges, never from the middle
   // 0: top, 1: right, 2: bottom, 3: left
-  const edge = Math.floor(Math.random() * 4);
+  const edge = Math.floor(Math.random() * 5);
 
   // Calculate the position based on the selected edge
   let position: Position;
@@ -21,10 +21,10 @@ export const randomEdgePosition = (width: number, height: number): Position => {
   switch (edge) {
     case 0: // TOP edge only
       position = {
-        // X position is random along the top edge, but avoid the middle 50% of the screen
-        x: Math.random() < 0.5
-          ? randomBetween(0, width * 0.25) // Left quarter of the screen
-          : randomBetween(width * 0.75, width), // Right quarter of the screen
+        // X position is random along the top edge, with higher probability at the corners
+        x: Math.random() < 0.7
+          ? randomBetween(0, width * 0.2) // Left edge of the screen
+          : randomBetween(width * 0.8, width), // Right edge of the screen
         y: -offset // Above the screen
       };
       break;
@@ -33,7 +33,7 @@ export const randomEdgePosition = (width: number, height: number): Position => {
       position = {
         x: width + offset, // Right of the screen
         // Y position is random along the right edge, but avoid the middle 50% of the screen
-        y: Math.random() < 0.5
+        y: Math.random() < 0.9
           ? randomBetween(0, height * 0.25) // Top quarter of the screen
           : randomBetween(height * 0.75, height) // Bottom quarter of the screen
       };
@@ -42,7 +42,7 @@ export const randomEdgePosition = (width: number, height: number): Position => {
     case 2: // BOTTOM edge only
       position = {
         // X position is random along the bottom edge, but avoid the middle 50% of the screen
-        x: Math.random() < 0.5
+        x: Math.random() < 0.9
           ? randomBetween(0, width * 0.25) // Left quarter of the screen
           : randomBetween(width * 0.75, width), // Right quarter of the screen
         y: height + offset // Below the screen
@@ -53,7 +53,7 @@ export const randomEdgePosition = (width: number, height: number): Position => {
       position = {
         x: -offset, // Left of the screen
         // Y position is random along the left edge, but avoid the middle 50% of the screen
-        y: Math.random() < 0.5
+        y: Math.random() < 0.9
           ? randomBetween(0, height * 0.25) // Top quarter of the screen
           : randomBetween(height * 0.75, height) // Bottom quarter of the screen
       };
