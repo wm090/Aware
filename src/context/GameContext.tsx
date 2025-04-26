@@ -108,30 +108,36 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const { width, height } = Dimensions.get('window');
               const spawnPosition = randomEdgePosition(width, height);
 
-              // Calculate a target point that's beyond the player position
-              // This ensures arrows continue past the player instead of stopping
+              // Target the player's current position when the arrow spawns
+              // This ensures arrows aim at the player, but won't follow them after spawning
+
+              // Get the player's current position
               const playerPos = playerPositionRef.current;
 
-              // Calculate direction vector from spawn to player
-              const dirX = playerPos.x - spawnPosition.x;
-              const dirY = playerPos.y - spawnPosition.y;
+              // Use the player's exact position as the target
+              const targetX = playerPos.x;
+              const targetY = playerPos.y;
+
+              // Calculate direction vector from spawn to target
+              const dirX = targetX - spawnPosition.x;
+              const dirY = targetY - spawnPosition.y;
 
               // Normalize the direction vector
               const length = Math.sqrt(dirX * dirX + dirY * dirY);
               const normDirX = dirX / length;
               const normDirY = dirY / length;
 
-              // Calculate a target point that's far beyond the player
-              // This ensures arrows will continue in their trajectory
-              const targetX = playerPos.x + normDirX * (width + height); // Use screen diagonal as distance
-              const targetY = playerPos.y + normDirY * (width + height);
+              // Calculate a target point that's far beyond the center
+              // This ensures arrows will continue in their trajectory across the screen
+              const farTargetX = targetX + normDirX * (width + height) * 2; // Use 2x screen diagonal as distance
+              const farTargetY = targetY + normDirY * (width + height) * 2;
 
               const newArrow: Arrow = {
                 id: generateId(),
                 position: spawnPosition,
                 angle: 0, // Will be calculated in the component
                 speed: randomArrowSpeed(),
-                target: { x: targetX, y: targetY }, // Target point beyond the player
+                target: { x: farTargetX, y: farTargetY }, // Target point far beyond the center
               };
 
               return [...prevArrows, newArrow];
