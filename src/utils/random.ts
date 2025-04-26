@@ -6,18 +6,39 @@ export const randomBetween = (min: number, max: number): number => {
   return Math.random() * (max - min) + min;
 };
 
-// Generate a random position along the edge of the screen
+// Generate a random position outside the visible screen area
 export const randomEdgePosition = (width: number, height: number): Position => {
-  // Only use left and right edges to ensure arrows only come from the sides
-  const edge = Math.floor(Math.random() * 2); // 0: left, 1: right
+  // Define a larger offset to ensure arrows spawn outside the visible area on all devices
+  const offset = 100; // 100 pixels outside the screen
+
+  // Ensure we're not spawning arrows too close to the corners
+  const padding = 50; // Avoid spawning within 50px of corners
+
+  const edge = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
 
   switch (edge) {
-    case 0: // left
-      return { x: 0, y: randomBetween(0, height) };
-    case 1: // right
-      return { x: width, y: randomBetween(0, height) };
+    case 0: // top (above the screen)
+      return {
+        x: randomBetween(padding, width - padding),
+        y: -offset
+      };
+    case 1: // right (to the right of the screen)
+      return {
+        x: width + offset,
+        y: randomBetween(padding, height - padding)
+      };
+    case 2: // bottom (below the screen)
+      return {
+        x: randomBetween(padding, width - padding),
+        y: height + offset
+      };
+    case 3: // left (to the left of the screen)
+      return {
+        x: -offset,
+        y: randomBetween(padding, height - padding)
+      };
     default:
-      return { x: 0, y: 0 };
+      return { x: -offset, y: -offset }; // Fallback position outside the screen
   }
 };
 

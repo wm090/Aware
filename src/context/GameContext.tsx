@@ -106,15 +106,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setArrows(prevArrows => {
             if (prevArrows.length < ARROW.MAX_COUNT) {
               const { width, height } = Dimensions.get('window');
-              // Get a spawn position from the sides only
               const spawnPosition = randomEdgePosition(width, height);
-
-              // Double-check that the spawn position is actually on the edge
-              // This ensures arrows only come from the sides
-              if (spawnPosition.x !== 0 && spawnPosition.x !== width) {
-                // If somehow not on the edge, force it to the left edge
-                spawnPosition.x = 0;
-              }
 
               // Calculate a target point that's beyond the player position
               // This ensures arrows continue past the player instead of stopping
@@ -180,7 +172,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // Only remove arrows that are far off-screen (increased buffer zone)
           const { width, height } = Dimensions.get('window');
-          const bufferZone = 200; // Increased from 50 to ensure arrows don't disappear prematurely
+          const bufferZone = 300; // Increased to 300 to ensure arrows don't disappear prematurely on any device
 
           return movedArrows.filter(arrow =>
             arrow.position.x >= -bufferZone &&
