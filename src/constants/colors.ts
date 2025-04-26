@@ -5,4 +5,5 @@ export const COLORS = {
   TEXT: 'black',
   DANGER: 'red',
   SUCCESS: 'green',
+  ARROW: '#FF0000', // Pure red color using hex code
 };

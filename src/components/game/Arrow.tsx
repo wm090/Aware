@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Arrow as ArrowType } from '../../types';
 import { ARROW } from '../../constants';
+import { COLORS } from '../../constants/colors';
 import { calculateAngle } from '../../utils';
 
 interface ArrowProps {
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: ARROW.SIZE,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: 'red',
+    borderBottomColor: COLORS.ARROW,
     transform: [{ rotate: '90deg' }],
   },
 });
