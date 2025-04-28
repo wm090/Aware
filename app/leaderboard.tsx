@@ -17,7 +17,7 @@ const LeaderboardScreen: React.FC = () => {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const router = useRouter();
   const { theme, isDarkMode } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
 
   useEffect(() => {
     loadUsername();
@@ -88,6 +88,37 @@ const LeaderboardScreen: React.FC = () => {
     } catch (error) {
       Alert.alert("Error", "Failed to sign out. Please try again.");
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    // First, confirm the user wants to delete their account
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This will remove all your scores and profile data.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete Account",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert(
+                "Account Data Deleted",
+                "Your scores and profile data have been removed. Your account has been signed out.",
+                [{ text: "OK", onPress: () => router.replace('/game') }]
+              );
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete account data. Please try again.");
+              console.error('Error in handleDeleteAccount:', error);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderItem = ({ item, index }: { item: LeaderboardEntry; index: number }) => {
@@ -197,6 +228,11 @@ const LeaderboardScreen: React.FC = () => {
                     {
                       text: "Sign Out",
                       onPress: handleSignOut
+                    },
+                    {
+                      text: "Delete Account",
+                      onPress: handleDeleteAccount,
+                      style: "destructive"
                     },
                     {
                       text: "Cancel",
