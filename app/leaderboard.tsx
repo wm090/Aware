@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
-import { Text, Divider, IconButton, Menu } from 'react-native-paper';
+import { Text, Divider, IconButton } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LeaderboardEntry } from '../src/utils/storage';
@@ -14,7 +14,6 @@ import CustomButton from '../src/components/ui/CustomButton';
 const LeaderboardScreen: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [menuVisible, setMenuVisible] = useState(false);
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const router = useRouter();
   const { theme, isDarkMode } = useTheme();
@@ -79,8 +78,6 @@ const LeaderboardScreen: React.FC = () => {
         }
       ]
     );
-
-    setMenuVisible(false);
   };
 
   const handleSignOut = async () => {
@@ -91,7 +88,6 @@ const LeaderboardScreen: React.FC = () => {
     } catch (error) {
       Alert.alert("Error", "Failed to sign out. Please try again.");
     }
-    setMenuVisible(false);
   };
 
   const renderItem = ({ item, index }: { item: LeaderboardEntry; index: number }) => {
@@ -182,45 +178,52 @@ const LeaderboardScreen: React.FC = () => {
             iconColor="white"
           />
 
-          {/* Menu for all users */}
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <IconButton
-                icon="dots-vertical"
-                size={24}
-                onPress={() => setMenuVisible(true)}
-                style={styles.headerButton}
-                iconColor="white"
-              />
-            }
-          >
-            {/* Show different options based on authentication status */}
-            {user ? (
-              <>
-                <Menu.Item
-                  onPress={handleClearUserScores}
-                  title="Clear My Scores"
-                  leadingIcon="delete"
-                />
-                <Menu.Item
-                  onPress={handleSignOut}
-                  title="Sign Out"
-                  leadingIcon="logout"
-                />
-              </>
-            ) : (
-              <Menu.Item
-                onPress={() => {
-                  setMenuVisible(false);
-                  router.push('/auth');
-                }}
-                title="Sign In / Create Account"
-                leadingIcon="login"
-              />
-            )}
-          </Menu>
+          {/* Options button - using Alert instead of Menu */}
+          <IconButton
+            icon="dots-vertical"
+            size={24}
+            onPress={() => {
+              // Show different options based on authentication status
+              if (user) {
+                Alert.alert(
+                  "Options",
+                  "Choose an option",
+                  [
+                    {
+                      text: "Clear My Scores",
+                      onPress: handleClearUserScores,
+                      style: "destructive"
+                    },
+                    {
+                      text: "Sign Out",
+                      onPress: handleSignOut
+                    },
+                    {
+                      text: "Cancel",
+                      style: "cancel"
+                    }
+                  ]
+                );
+              } else {
+                Alert.alert(
+                  "Sign In Required",
+                  "Would you like to sign in or create an account?",
+                  [
+                    {
+                      text: "Sign In / Create Account",
+                      onPress: () => router.push('/auth')
+                    },
+                    {
+                      text: "Cancel",
+                      style: "cancel"
+                    }
+                  ]
+                );
+              }
+            }}
+            style={styles.headerButton}
+            iconColor="white"
+          />
         </View>
       </View>
 
