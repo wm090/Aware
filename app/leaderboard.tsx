@@ -3,9 +3,11 @@ import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { Text, Divider, IconButton, Menu } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { getLeaderboard, LeaderboardEntry, getUsername, clearUserScore } from '../src/utils/storage';
+import { LeaderboardEntry } from '../src/utils/storage';
+import { getUsername, clearUserScore, subscribeToLeaderboard } from '../src/utils/storageManager';
 import { formatTime } from '../src/utils/animation';
 import { useTheme } from '../src/context/ThemeContext';
+import { useAuth } from '../src/context/AuthContext';
 import CustomButton from '../src/components/ui/CustomButton';
 
 const LeaderboardScreen: React.FC = () => {
@@ -15,10 +17,19 @@ const LeaderboardScreen: React.FC = () => {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const router = useRouter();
   const { theme, isDarkMode } = useTheme();
+  const { user } = useAuth();
 
   useEffect(() => {
-    loadLeaderboard();
     loadUsername();
+
+    // Subscribe to real-time leaderboard updates
+    const unsubscribe = subscribeToLeaderboard(setLeaderboard);
+    setLoading(false);
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const loadUsername = async () => {
@@ -26,15 +37,14 @@ const LeaderboardScreen: React.FC = () => {
     setCurrentUsername(username);
   };
 
-  const loadLeaderboard = async () => {
+  const loadLeaderboard = () => {
     setLoading(true);
-    const data = await getLeaderboard();
-    setLeaderboard(data);
-    setLoading(false);
+    // The leaderboard is automatically updated via the subscription
+    setTimeout(() => setLoading(false), 500); // Just for UI feedback
   };
 
   const handleClearUserScores = async () => {
-    if (!currentUsername) return;
+    if (!user) return;
 
     Alert.alert(
       "Clear Your Scores",
@@ -48,7 +58,7 @@ const LeaderboardScreen: React.FC = () => {
           text: "Clear",
           style: "destructive",
           onPress: async () => {
-            await clearUserScore(currentUsername);
+            await clearUserScore();
             loadLeaderboard();
           }
         }
@@ -146,25 +156,36 @@ const LeaderboardScreen: React.FC = () => {
             iconColor="white"
           />
 
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <IconButton
-                icon="dots-vertical"
-                size={24}
-                onPress={() => setMenuVisible(true)}
-                style={styles.headerButton}
-                iconColor="white"
+          {/* Only show menu if user is authenticated */}
+          {user ? (
+            <Menu
+              visible={menuVisible}
+              onDismiss={() => setMenuVisible(false)}
+              anchor={
+                <IconButton
+                  icon="dots-vertical"
+                  size={24}
+                  onPress={() => setMenuVisible(true)}
+                  style={styles.headerButton}
+                  iconColor="white"
+                />
+              }
+            >
+              <Menu.Item
+                onPress={handleClearUserScores}
+                title="Clear My Scores"
+                leadingIcon="delete"
               />
-            }
-          >
-            <Menu.Item
-              onPress={handleClearUserScores}
-              title="Clear My Scores"
-              leadingIcon="delete"
+            </Menu>
+          ) : (
+            <IconButton
+              icon="dots-vertical"
+              size={24}
+              onPress={() => Alert.alert('Sign In Required', 'Please sign in to manage your scores')}
+              style={styles.headerButton}
+              iconColor="white"
             />
-          </Menu>
+          )}
         </View>
       </View>
 

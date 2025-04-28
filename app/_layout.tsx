@@ -1,7 +1,9 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { PaperProvider, MD3LightTheme, MD3DarkTheme, configureFonts } from 'react-native-paper';
+import { PaperProvider, configureFonts } from 'react-native-paper';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { AuthProvider } from '../src/context/AuthContext';
+import AuthGuard from '../src/components/auth/AuthGuard';
 
 // Define font configuration
 const fontConfig = {
@@ -47,16 +49,25 @@ function ThemedLayout() {
           headerShown: false,
           contentStyle: { backgroundColor: theme.colors.background }
         }}
-      />
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="game" />
+        <Stack.Screen name="leaderboard" />
+        <Stack.Screen name="auth" />
+      </Stack>
     </PaperProvider>
   );
 }
 
-// Root layout with theme provider
+// Root layout with providers
 export default function Layout() {
   return (
-    <ThemeProvider>
-      <ThemedLayout />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <AuthGuard>
+          <ThemedLayout />
+        </AuthGuard>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

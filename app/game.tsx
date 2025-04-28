@@ -5,6 +5,7 @@ import { IconButton } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { GameProvider, useGameContext } from '../src/context/GameContext';
 import { useTheme } from '../src/context/ThemeContext';
+import { useAuth } from '../src/context/AuthContext';
 import PlayerCircle from '../src/components/game/PlayerCircle';
 import Arrow from '../src/components/game/Arrow';
 import TimerDisplay from '../src/components/game/TimerDisplay';
@@ -19,6 +20,7 @@ import { hasUsername } from '../src/utils/storage';
 const GameContent: React.FC = () => {
   const { gameState, arrows, startGame, updatePlayerPosition, playerState } = useGameContext();
   const { theme, isDarkMode } = useTheme();
+  const { user } = useAuth();
   const lastPositionRef = useRef(playerState.position);
   const router = useRouter();
   const [showUsernameModal, setShowUsernameModal] = useState(false);
@@ -29,6 +31,12 @@ const GameContent: React.FC = () => {
   // Check if username exists when component mounts
   useEffect(() => {
     const checkUsername = async () => {
+      // If user is authenticated, we don't need to show the username modal
+      if (user) {
+        return;
+      }
+
+      // Otherwise, check if there's a local username
       const hasUser = await hasUsername();
       if (!hasUser) {
         setShowUsernameModal(true);
@@ -36,7 +44,7 @@ const GameContent: React.FC = () => {
     };
 
     checkUsername();
-  }, []);
+  }, [user]);
 
   // Update the reference when playerState changes
   useEffect(() => {
@@ -127,6 +135,17 @@ const GameContent: React.FC = () => {
             title="Leaderboard"
             icon="trophy"
           />
+
+          {/* Sign in button (only shown if not authenticated) */}
+          {!user && (
+            <CustomButton
+              mode="outlined"
+              onPress={() => router.push('/auth')}
+              style={styles.authButton}
+              title="Sign In / Create Account"
+              icon="account"
+            />
+          )}
         </View>
       )}
 
@@ -194,6 +213,11 @@ const styles = StyleSheet.create({
     marginBottom: 10, // Reduced to make space for leaderboard button
   },
   leaderboardButton: {
+    width: 200,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  authButton: {
     width: 200,
     marginTop: 10,
     marginBottom: 30, // Add bottom margin to create space for the player circle

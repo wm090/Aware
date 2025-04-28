@@ -3,7 +3,7 @@ import { Dimensions } from 'react-native';
 import { GameContextType, GameState, Position, Arrow } from '../types';
 import { randomEdgePosition, randomArrowSpeed, generateId, checkCollision } from '../utils';
 import { ARROW, PLAYER } from '../constants';
-import { getUsername, saveScore } from '../utils/storage';
+import { getUsername, saveScore } from '../utils/storageManager';
 
 // Default values
 const defaultGameContext: GameContextType = {
@@ -89,15 +89,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Save score to leaderboard
     const saveGameScore = async () => {
       try {
+        console.log(`Game over with score: ${elapsedTime}`);
         const username = await getUsername();
+        console.log(`Got username: ${username}`);
+
         if (username) {
+          console.log(`Saving score ${elapsedTime} for ${username}`);
           await saveScore(username, elapsedTime);
+        } else {
+          console.error('No username found, cannot save score');
         }
       } catch (error) {
         console.error('Error saving score:', error);
       }
     };
 
+    // Execute score saving
     saveGameScore();
   }, [elapsedTime]);
 
