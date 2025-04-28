@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import { PLAYER } from '../../constants';
 import { useGameContext } from '../../context/GameContext';
 
@@ -7,15 +7,21 @@ const PlayerCircle: React.FC = () => {
   const { playerState } = useGameContext();
   const { position } = playerState;
 
+  // Get screen dimensions
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
+
+  // Calculate absolute position (center of screen + offset from player movement)
+  const absoluteX = screenWidth / 2 - PLAYER.RADIUS + position.x;
+  const absoluteY = screenHeight / 2 - PLAYER.RADIUS + position.y;
+
   return (
     <View
       style={[
         styles.player,
         {
-          transform: [
-            { translateX: position.x },
-            { translateY: position.y },
-          ],
+          left: absoluteX,
+          top: absoluteY,
         },
       ]}
     >

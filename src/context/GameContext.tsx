@@ -27,11 +27,11 @@ export const useGameContext = () => useContext(GameContext);
 // Provider component
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>('idle');
-  // Initialize player at the center of the screen
+  // Initialize player position at (0,0) - it will be centered in the PlayerCircle component
   const [playerState, setPlayerState] = useState({
     position: {
-      x: 0, // Will be centered in useEffect
-      y: 0, // Will be centered in useEffect
+      x: 0,
+      y: 0,
     },
   });
   const [arrows, setArrows] = useState<Arrow[]>([]);
@@ -40,7 +40,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Use refs for values that shouldn't trigger re-renders
   const lastSpawnTimeRef = useRef(0);
   const gameLoopIdRef = useRef<NodeJS.Timeout | null>(null);
-  const playerPositionRef = useRef(playerState.position);
+
+  // Initialize player position ref at (0,0)
+  const playerPositionRef = useRef({
+    x: 0,
+    y: 0,
+  });
 
   // Update player position
   const updatePlayerPosition = useCallback((position: Position) => {
@@ -53,18 +58,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Start the game
   const startGame = useCallback(() => {
-    setGameState('playing');
+    // Reset game state
     setElapsedTime(0);
     lastSpawnTimeRef.current = 0;
     setArrows([]);
 
-    // Center the player
-    const centerPosition = {
-      x: Dimensions.get('window').width / 2 - PLAYER.RADIUS,
-      y: Dimensions.get('window').height / 2 - PLAYER.RADIUS,
-    };
-    playerPositionRef.current = centerPosition;
-    setPlayerState({ position: centerPosition });
+    // Reset player position to (0,0)
+    const initialPosition = { x: 0, y: 0 };
+    playerPositionRef.current = initialPosition;
+    setPlayerState({ position: initialPosition });
+
+    // Set game state to playing
+    setGameState('playing');
   }, []);
 
   // End the game
@@ -78,27 +83,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Reset the game
   const resetGame = useCallback(() => {
-    setGameState('idle');
+    // Reset game state
     setElapsedTime(0);
     setArrows([]);
 
-    // Center the player
-    const centerPosition = {
-      x: Dimensions.get('window').width / 2 - PLAYER.RADIUS,
-      y: Dimensions.get('window').height / 2 - PLAYER.RADIUS,
-    };
-    playerPositionRef.current = centerPosition;
-    setPlayerState({ position: centerPosition });
+    // Reset player position to (0,0)
+    const initialPosition = { x: 0, y: 0 };
+    playerPositionRef.current = initialPosition;
+    setPlayerState({ position: initialPosition });
+
+    // Set game state to idle
+    setGameState('idle');
   }, []);
 
-  // Center the player when the component mounts
+  // Reset player position when component mounts
   useEffect(() => {
-    const centerPosition = {
-      x: Dimensions.get('window').width / 2 - PLAYER.RADIUS,
-      y: Dimensions.get('window').height / 2 - PLAYER.RADIUS,
-    };
-    playerPositionRef.current = centerPosition;
-    setPlayerState({ position: centerPosition });
+    const initialPosition = { x: 0, y: 0 };
+    playerPositionRef.current = initialPosition;
+    setPlayerState({ position: initialPosition });
   }, []);
 
   // Game loop

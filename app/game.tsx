@@ -23,6 +23,14 @@ const GameContent: React.FC = () => {
     lastPositionRef.current = playerState.position;
   }, [playerState.position]);
 
+  // Reset the last position reference when game state changes
+  useEffect(() => {
+    // This ensures we start from the initial position when the game starts or resets
+    if (gameState === 'playing' || gameState === 'idle') {
+      lastPositionRef.current = playerState.position;
+    }
+  }, [gameState, playerState.position]);
+
   // Create pan responder for the entire screen
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => !isDisabled,
@@ -30,6 +38,7 @@ const GameContent: React.FC = () => {
     onPanResponderGrant: () => {
       setTouchActive(true);
       // Use the current player position from context
+      // This ensures we're always starting from the current position
       lastPositionRef.current = playerState.position;
     },
     onPanResponderMove: (_, gestureState) => {
