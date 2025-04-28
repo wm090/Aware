@@ -2,7 +2,7 @@
 export const PLAYER = {
   RADIUS: 20,
   COLOR: 'black',
-  INITIAL_POSITION: { x: 0, y: 0 }, // Will be centered in the screen
+  INITIAL_POSITION: { x: 0, y: 0 }, // Initial offset - actual centering is done in GameContext
 };
 
 export const ARROW = {

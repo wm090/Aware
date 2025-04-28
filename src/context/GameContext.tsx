@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Dimensions } from 'react-native';
 import { GameContextType, GameState, Position, Arrow } from '../types';
 import { randomEdgePosition, randomArrowSpeed, generateId, checkCollision } from '../utils';
-import { ARROW } from '../constants';
+import { ARROW, PLAYER } from '../constants';
 
 // Default values
 const defaultGameContext: GameContextType = {
@@ -27,10 +27,11 @@ export const useGameContext = () => useContext(GameContext);
 // Provider component
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>('idle');
+  // Initialize player at the center of the screen
   const [playerState, setPlayerState] = useState({
     position: {
-      x: Dimensions.get('window').width / 2,
-      y: Dimensions.get('window').height / 2,
+      x: 0, // Will be centered in useEffect
+      y: 0, // Will be centered in useEffect
     },
   });
   const [arrows, setArrows] = useState<Arrow[]>([]);
@@ -59,8 +60,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Center the player
     const centerPosition = {
-      x: Dimensions.get('window').width / 2,
-      y: Dimensions.get('window').height / 2,
+      x: Dimensions.get('window').width / 2 - PLAYER.RADIUS,
+      y: Dimensions.get('window').height / 2 - PLAYER.RADIUS,
     };
     playerPositionRef.current = centerPosition;
     setPlayerState({ position: centerPosition });
@@ -83,8 +84,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Center the player
     const centerPosition = {
-      x: Dimensions.get('window').width / 2,
-      y: Dimensions.get('window').height / 2,
+      x: Dimensions.get('window').width / 2 - PLAYER.RADIUS,
+      y: Dimensions.get('window').height / 2 - PLAYER.RADIUS,
+    };
+    playerPositionRef.current = centerPosition;
+    setPlayerState({ position: centerPosition });
+  }, []);
+
+  // Center the player when the component mounts
+  useEffect(() => {
+    const centerPosition = {
+      x: Dimensions.get('window').width / 2 - PLAYER.RADIUS,
+      y: Dimensions.get('window').height / 2 - PLAYER.RADIUS,
     };
     playerPositionRef.current = centerPosition;
     setPlayerState({ position: centerPosition });

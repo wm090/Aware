@@ -7,3 +7,4 @@ export const COLORS = {
   SUCCESS: 'green',
   ARROW: '#FF0000', // Pure red color using hex code
 };
+
