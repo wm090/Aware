@@ -9,7 +9,7 @@ export const ARROW = {
   SIZE: 15,
   MIN_SPEED: 5,  // Increased from 2
   MAX_SPEED: 5, // Increased from 5
-  SPAWN_INTERVAL: 800, // ms
+  SPAWN_INTERVAL: 450, // ms
   MAX_COUNT: 20, // Maximum number of arrows on screen
 };
 
