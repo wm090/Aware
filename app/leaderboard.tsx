@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
-import { Text, Button, Divider, IconButton, Menu } from 'react-native-paper';
+import { Text, Divider, IconButton, Menu } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { getLeaderboard, LeaderboardEntry, getUsername, clearUserScore } from '../src/utils/storage';
 import { formatTime } from '../src/utils/animation';
+import { useTheme } from '../src/context/ThemeContext';
+import CustomButton from '../src/components/ui/CustomButton';
 
 const LeaderboardScreen: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -12,6 +14,7 @@ const LeaderboardScreen: React.FC = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const router = useRouter();
+  const { theme, isDarkMode } = useTheme();
 
   useEffect(() => {
     loadLeaderboard();
@@ -72,24 +75,40 @@ const LeaderboardScreen: React.FC = () => {
     return (
       <View style={[
         styles.itemContainer,
-        isCurrentUser && styles.currentUserItem
+        isCurrentUser && styles.currentUserItem,
+        { backgroundColor: isCurrentUser ?
+          (isDarkMode ? 'rgba(103, 80, 164, 0.15)' : 'rgba(103, 80, 164, 0.05)') :
+          'transparent'
+        }
       ]}>
         <View style={styles.rankContainer}>
-          <Text style={styles.rank}>{medal || `#${index + 1}`}</Text>
+          <Text style={[
+            styles.rank,
+            { color: theme.colors.text }
+          ]}>
+            {medal || `#${index + 1}`}
+          </Text>
         </View>
         <View style={styles.detailsContainer}>
           <Text style={[
             styles.username,
-            isCurrentUser && styles.currentUserText
+            isCurrentUser && styles.currentUserText,
+            { color: theme.colors.text }
           ]}>
             {item.username} {isCurrentUser && '(You)'}
           </Text>
-          <Text style={styles.date}>{formattedDate}</Text>
+          <Text style={[
+            styles.date,
+            { color: isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)' }
+          ]}>
+            {formattedDate}
+          </Text>
         </View>
         <View style={styles.scoreContainer}>
           <Text style={[
             styles.score,
-            isCurrentUser && styles.currentUserScore
+            isCurrentUser && styles.currentUserScore,
+            { color: theme.colors.primary }
           ]}>
             {formatTime(item.score)}
           </Text>
@@ -99,15 +118,22 @@ const LeaderboardScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[
+      styles.container,
+      { backgroundColor: theme.colors.background }
+    ]}>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
 
-      <View style={styles.header}>
+      <View style={[
+        styles.header,
+        { backgroundColor: theme.colors.primary }
+      ]}>
         <IconButton
           icon="arrow-left"
           size={24}
           onPress={() => router.back()}
           style={styles.backButton}
+          iconColor="white"
         />
         <Text style={styles.title}>Leaderboard</Text>
 
@@ -117,6 +143,7 @@ const LeaderboardScreen: React.FC = () => {
             size={24}
             onPress={loadLeaderboard}
             style={styles.headerButton}
+            iconColor="white"
           />
 
           <Menu
@@ -128,6 +155,7 @@ const LeaderboardScreen: React.FC = () => {
                 size={24}
                 onPress={() => setMenuVisible(true)}
                 style={styles.headerButton}
+                iconColor="white"
               />
             }
           >
@@ -142,21 +170,22 @@ const LeaderboardScreen: React.FC = () => {
 
       {leaderboard.length === 0 && !loading ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No scores yet. Play a game to be the first!</Text>
-          <Button
+          <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+            No scores yet. Play a game to be the first!
+          </Text>
+          <CustomButton
             mode="contained"
             onPress={() => router.push('/game')}
             style={styles.playButton}
-          >
-            Play Now
-          </Button>
+            title="Play Now"
+          />
         </View>
       ) : (
         <FlatList
           data={leaderboard}
           renderItem={renderItem}
           keyExtractor={(item, index) => `${item.username}-${item.date}-${index}`}
-          ItemSeparatorComponent={() => <Divider />}
+          ItemSeparatorComponent={() => <Divider style={{ backgroundColor: isDarkMode ? '#333' : '#eee' }} />}
           contentContainerStyle={styles.listContent}
           refreshing={loading}
           onRefresh={loadLeaderboard}
@@ -236,13 +265,12 @@ const styles = StyleSheet.create({
     color: '#6750A4', // Purple color matching the start button
   },
   currentUserItem: {
-    backgroundColor: 'rgba(103, 80, 164, 0.05)', // Light purple background
+    // Background color is now applied dynamically
   },
   currentUserText: {
     fontWeight: 'bold',
   },
   currentUserScore: {
-    color: '#6750A4', // Purple color matching the start button
     fontWeight: 'bold',
   },
   emptyContainer: {

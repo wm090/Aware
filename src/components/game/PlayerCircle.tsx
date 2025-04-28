@@ -2,9 +2,11 @@ import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { PLAYER } from '../../constants';
 import { useGameContext } from '../../context/GameContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const PlayerCircle: React.FC = () => {
   const { playerState, gameState } = useGameContext();
+  const { isDarkMode } = useTheme();
   const { position } = playerState;
 
   // Get screen dimensions
@@ -34,7 +36,12 @@ const PlayerCircle: React.FC = () => {
         },
       ]}
     >
-      <View style={styles.circle} />
+      <View
+        style={[
+          styles.circle,
+          { backgroundColor: isDarkMode ? '#FFFFFF' : '#000000' }
+        ]}
+      />
     </View>
   );
 };

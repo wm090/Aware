@@ -1,20 +1,24 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { StyleSheet, View, Text, PanResponder } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Button, IconButton } from 'react-native-paper';
+import { IconButton } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { GameProvider, useGameContext } from '../src/context/GameContext';
+import { useTheme } from '../src/context/ThemeContext';
 import PlayerCircle from '../src/components/game/PlayerCircle';
 import Arrow from '../src/components/game/Arrow';
 import TimerDisplay from '../src/components/game/TimerDisplay';
 import GameOverOverlay from '../src/components/game/GameOverOverlay';
 import UsernameModal from '../src/components/game/UsernameModal';
+import ThemeToggle from '../src/components/ui/ThemeToggle';
+import CustomButton from '../src/components/ui/CustomButton';
 import { GAME } from '../src/constants';
 import { hasUsername } from '../src/utils/storage';
 
 // Game screen content
 const GameContent: React.FC = () => {
   const { gameState, arrows, startGame, updatePlayerPosition, playerState } = useGameContext();
+  const { theme, isDarkMode } = useTheme();
   const lastPositionRef = useRef(playerState.position);
   const router = useRouter();
   const [showUsernameModal, setShowUsernameModal] = useState(false);
@@ -88,8 +92,11 @@ const GameContent: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[
+      styles.container,
+      { backgroundColor: theme.colors.background }
+    ]}>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
 
       {/* Username modal */}
       <UsernameModal visible={showUsernameModal} onComplete={handleUsernameComplete} />
@@ -97,30 +104,29 @@ const GameContent: React.FC = () => {
       {/* Timer display */}
       <TimerDisplay />
 
+      {/* Theme toggle button (always visible) */}
+      <ThemeToggle style={styles.themeToggle} />
+
       {/* Start button (only shown in idle state) */}
       {gameState === 'idle' && (
         <View style={styles.startContainer}>
-          <Text style={styles.title}>Aware</Text>
-          <Text style={styles.subtitle}>Focus & Awareness Game</Text>
-          <Button
+          <Text style={[styles.title, { color: theme.colors.text }]}>Be Aware!</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.text }]}>Focus & Awareness Game</Text>
+          <CustomButton
             mode="contained"
             onPress={startGame}
             style={styles.startButton}
-            labelStyle={styles.buttonLabel}
-          >
-            Start Game
-          </Button>
+            title="Start Game"
+          />
 
           {/* Leaderboard button */}
-          <Button
+          <CustomButton
             mode="outlined"
             onPress={goToLeaderboard}
             style={styles.leaderboardButton}
-            labelStyle={styles.buttonLabel}
+            title="Leaderboard"
             icon="trophy"
-          >
-            Leaderboard
-          </Button>
+          />
         </View>
       )}
 
@@ -192,10 +198,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 30, // Add bottom margin to create space for the player circle
   },
-  buttonLabel: {
-    fontSize: 18,
-    padding: 5,
-  },
+
   touchOverlay: {
     position: 'absolute',
     top: 0,
@@ -204,5 +207,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'transparent',
     zIndex: 1, // Above background but below arrows, player, and game over overlay
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 40,
+    right: 10,
+    zIndex: 10,
   },
 });

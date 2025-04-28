@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
-import { Button, TextInput, Text } from 'react-native-paper';
+import { TextInput, Text } from 'react-native-paper';
 import { saveUsername } from '../../utils/storage';
+import { useTheme } from '../../context/ThemeContext';
+import CustomButton from '../ui/CustomButton';
 
 interface UsernameModalProps {
   visible: boolean;
@@ -11,6 +13,7 @@ interface UsernameModalProps {
 const UsernameModal: React.FC<UsernameModalProps> = ({ visible, onComplete }) => {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const { theme, isDarkMode } = useTheme();
 
   const handleSubmit = async () => {
     if (!username.trim()) {
@@ -36,10 +39,23 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ visible, onComplete }) =>
       onRequestClose={() => {}}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>Welcome to Aware!</Text>
-          <Text style={styles.subtitle}>Please enter a username to continue</Text>
-          
+        <View style={[
+          styles.modalContent,
+          { backgroundColor: theme.colors.background }
+        ]}>
+          <Text style={[
+            styles.title,
+            { color: theme.colors.text }
+          ]}>
+            Welcome to Aware!
+          </Text>
+          <Text style={[
+            styles.subtitle,
+            { color: theme.colors.text }
+          ]}>
+            Please enter a username to continue
+          </Text>
+
           <TextInput
             label="Username"
             value={username}
@@ -47,17 +63,17 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ visible, onComplete }) =>
             style={styles.input}
             autoCapitalize="none"
             error={!!error}
+            theme={{ colors: { primary: theme.colors.primary } }}
           />
-          
+
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          
-          <Button
+
+          <CustomButton
             mode="contained"
             onPress={handleSubmit}
             style={styles.button}
-          >
-            Continue
-          </Button>
+            title="Continue"
+          />
         </View>
       </View>
     </Modal>
@@ -72,11 +88,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
     width: '80%',
     alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   title: {
     fontSize: 24,

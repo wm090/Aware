@@ -1,12 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { formatTime } from '../../utils/animation';
 import { useGameContext } from '../../context/GameContext';
+import { useTheme } from '../../context/ThemeContext';
+import CustomButton from '../ui/CustomButton';
 
 const GameOverOverlay: React.FC = () => {
   const { gameState, elapsedTime, resetGame } = useGameContext();
+  const { theme, isDarkMode } = useTheme();
   const router = useRouter();
 
   // Only show when game is over
@@ -22,27 +24,29 @@ const GameOverOverlay: React.FC = () => {
   };
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Game Over</Text>
-        <Text style={styles.subtitle}>Your time:</Text>
-        <Text style={styles.time}>{formattedTime}</Text>
-        <Button
+    <View style={[
+      styles.overlay,
+      { backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)' }
+    ]}>
+      <View style={[
+        styles.container,
+        { backgroundColor: theme.colors.background }
+      ]}>
+        <Text style={[styles.title, { color: 'red' }]}>Game Over</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.text }]}>Your time:</Text>
+        <Text style={[styles.time, { color: theme.colors.text }]}>{formattedTime}</Text>
+        <CustomButton
           mode="contained"
           onPress={resetGame}
           style={styles.button}
-          labelStyle={styles.buttonLabel}
-        >
-          Play Again
-        </Button>
-        <Button
+          title="Play Again"
+        />
+        <CustomButton
           mode="outlined"
           onPress={viewLeaderboard}
           style={styles.button}
-          labelStyle={styles.buttonLabel}
-        >
-          View Leaderboard
-        </Button>
+          title="View Leaderboard"
+        />
       </View>
     </View>
   );
@@ -51,18 +55,21 @@ const GameOverOverlay: React.FC = () => {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
   },
   container: {
-    backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
     alignItems: 'center',
     width: '80%',
     maxWidth: 300,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   title: {
     fontSize: 28,
@@ -82,10 +89,6 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     marginTop: 10,
-  },
-  buttonLabel: {
-    fontSize: 16,
-    padding: 5,
   },
 });
 
