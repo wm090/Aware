@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { Text, Button, Divider, IconButton } from 'react-native-paper';
+import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import { Text, Button, Divider, IconButton, Menu } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { getLeaderboard, LeaderboardEntry } from '../src/utils/storage';
+import { getLeaderboard, LeaderboardEntry, getUsername, clearUserScore } from '../src/utils/storage';
 import { formatTime } from '../src/utils/animation';
 
 const LeaderboardScreen: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     loadLeaderboard();
+    loadUsername();
   }, []);
+
+  const loadUsername = async () => {
+    const username = await getUsername();
+    setCurrentUsername(username);
+  };
 
   const loadLeaderboard = async () => {
     setLoading(true);
@@ -22,28 +30,69 @@ const LeaderboardScreen: React.FC = () => {
     setLoading(false);
   };
 
+  const handleClearUserScores = async () => {
+    if (!currentUsername) return;
+
+    Alert.alert(
+      "Clear Your Scores",
+      "Are you sure you want to remove all your scores from the leaderboard?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            await clearUserScore(currentUsername);
+            loadLeaderboard();
+          }
+        }
+      ]
+    );
+
+    setMenuVisible(false);
+  };
+
   const renderItem = ({ item, index }: { item: LeaderboardEntry; index: number }) => {
     // Format the date
     const date = new Date(item.date);
     const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-    
+
     // Get medal emoji for top 3
     let medal = '';
     if (index === 0) medal = '🥇';
     else if (index === 1) medal = '🥈';
     else if (index === 2) medal = '🥉';
 
+    // Check if this is the current user's score
+    const isCurrentUser = item.username === currentUsername;
+
     return (
-      <View style={styles.itemContainer}>
+      <View style={[
+        styles.itemContainer,
+        isCurrentUser && styles.currentUserItem
+      ]}>
         <View style={styles.rankContainer}>
           <Text style={styles.rank}>{medal || `#${index + 1}`}</Text>
         </View>
         <View style={styles.detailsContainer}>
-          <Text style={styles.username}>{item.username}</Text>
+          <Text style={[
+            styles.username,
+            isCurrentUser && styles.currentUserText
+          ]}>
+            {item.username} {isCurrentUser && '(You)'}
+          </Text>
           <Text style={styles.date}>{formattedDate}</Text>
         </View>
         <View style={styles.scoreContainer}>
-          <Text style={styles.score}>{formatTime(item.score)}</Text>
+          <Text style={[
+            styles.score,
+            isCurrentUser && styles.currentUserScore
+          ]}>
+            {formatTime(item.score)}
+          </Text>
         </View>
       </View>
     );
@@ -52,7 +101,7 @@ const LeaderboardScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      
+
       <View style={styles.header}>
         <IconButton
           icon="arrow-left"
@@ -61,14 +110,36 @@ const LeaderboardScreen: React.FC = () => {
           style={styles.backButton}
         />
         <Text style={styles.title}>Leaderboard</Text>
-        <IconButton
-          icon="refresh"
-          size={24}
-          onPress={loadLeaderboard}
-          style={styles.refreshButton}
-        />
+
+        <View style={styles.headerButtons}>
+          <IconButton
+            icon="refresh"
+            size={24}
+            onPress={loadLeaderboard}
+            style={styles.headerButton}
+          />
+
+          <Menu
+            visible={menuVisible}
+            onDismiss={() => setMenuVisible(false)}
+            anchor={
+              <IconButton
+                icon="dots-vertical"
+                size={24}
+                onPress={() => setMenuVisible(true)}
+                style={styles.headerButton}
+              />
+            }
+          >
+            <Menu.Item
+              onPress={handleClearUserScores}
+              title="Clear My Scores"
+              leadingIcon="delete"
+            />
+          </Menu>
+        </View>
       </View>
-      
+
       {leaderboard.length === 0 && !loading ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No scores yet. Play a game to be the first!</Text>
@@ -109,12 +180,16 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     backgroundColor: '#6750A4', // Purple color matching the start button
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   backButton: {
     marginRight: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  refreshButton: {
-    marginLeft: 8,
+  headerButton: {
+    marginLeft: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   title: {
@@ -159,6 +234,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#6750A4', // Purple color matching the start button
+  },
+  currentUserItem: {
+    backgroundColor: 'rgba(103, 80, 164, 0.05)', // Light purple background
+  },
+  currentUserText: {
+    fontWeight: 'bold',
+  },
+  currentUserScore: {
+    color: '#6750A4', // Purple color matching the start button
+    fontWeight: 'bold',
   },
   emptyContainer: {
     flex: 1,
