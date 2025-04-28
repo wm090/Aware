@@ -4,16 +4,25 @@ import { PLAYER } from '../../constants';
 import { useGameContext } from '../../context/GameContext';
 
 const PlayerCircle: React.FC = () => {
-  const { playerState } = useGameContext();
+  const { playerState, gameState } = useGameContext();
   const { position } = playerState;
 
   // Get screen dimensions
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
 
-  // Calculate absolute position (center of screen + offset from player movement)
+  // Calculate base position (center of screen)
+  let baseY = screenHeight / 2;
+
+  // If we're in the idle state (showing the start screen), position the player below the Start Game button
+  if (gameState === 'idle') {
+    // Position the player circle below the "Start Game" button
+    baseY = screenHeight * 0.75; // 75% down the screen - further down for better visibility
+  }
+
+  // Calculate absolute position (base position + offset from player movement)
   const absoluteX = screenWidth / 2 - PLAYER.RADIUS + position.x;
-  const absoluteY = screenHeight / 2 - PLAYER.RADIUS + position.y;
+  const absoluteY = baseY - PLAYER.RADIUS + position.y;
 
   return (
     <View
@@ -37,7 +46,7 @@ const styles = StyleSheet.create({
     height: PLAYER.RADIUS * 2,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 15, // Increased z-index to ensure visibility
   },
   circle: {
     width: PLAYER.RADIUS * 2,

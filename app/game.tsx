@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, View, Text, PanResponder, Dimensions } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { StyleSheet, View, Text, PanResponder } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from 'react-native-paper';
 import { GameProvider, useGameContext } from '../src/context/GameContext';
@@ -12,7 +12,6 @@ import { GAME } from '../src/constants';
 // Game screen content
 const GameContent: React.FC = () => {
   const { gameState, arrows, startGame, updatePlayerPosition, playerState } = useGameContext();
-  const [touchActive, setTouchActive] = useState(false);
   const lastPositionRef = useRef(playerState.position);
 
   // Don't allow movement if game is over
@@ -27,16 +26,20 @@ const GameContent: React.FC = () => {
   useEffect(() => {
     // This ensures we start from the initial position when the game starts or resets
     if (gameState === 'playing' || gameState === 'idle') {
-      lastPositionRef.current = playerState.position;
+      // Reset to (0,0) to ensure proper positioning
+      lastPositionRef.current = { x: 0, y: 0 };
+      // Update the player position in the context
+      if (playerState.position.x !== 0 || playerState.position.y !== 0) {
+        updatePlayerPosition({ x: 0, y: 0 });
+      }
     }
-  }, [gameState, playerState.position]);
+  }, [gameState, updatePlayerPosition]);
 
   // Create pan responder for the entire screen
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => !isDisabled,
     onMoveShouldSetPanResponder: () => !isDisabled,
     onPanResponderGrant: () => {
-      setTouchActive(true);
       // Use the current player position from context
       // This ensures we're always starting from the current position
       lastPositionRef.current = playerState.position;
@@ -54,7 +57,6 @@ const GameContent: React.FC = () => {
       updatePlayerPosition(newPosition);
     },
     onPanResponderRelease: () => {
-      setTouchActive(false);
       // Store the final position
       lastPositionRef.current = playerState.position;
     },
@@ -83,7 +85,7 @@ const GameContent: React.FC = () => {
         </View>
       )}
 
-      {/* Player circle */}
+      {/* Player circle - only show in playing state or below the start button in idle state */}
       <PlayerCircle />
 
       {/* Arrows */}
@@ -144,6 +146,7 @@ const styles = StyleSheet.create({
   startButton: {
     width: 200,
     marginTop: 20,
+    marginBottom: 30, // Add bottom margin to create space for the player circle
   },
   buttonLabel: {
     fontSize: 18,
