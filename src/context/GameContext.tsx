@@ -40,7 +40,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Use refs for values that shouldn't trigger re-renders
   const lastSpawnTimeRef = useRef(0);
-  const gameLoopIdRef = useRef<NodeJS.Timeout | null>(null);
+  const gameLoopIdRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   // Initialize player position ref at (0,0)
   const playerPositionRef = useRef({
@@ -62,6 +64,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Reset game state
     setElapsedTime(0);
     lastSpawnTimeRef.current = 0;
+    lastTimeRef.current = null;
+    startTimeRef.current = null;
     setArrows([]);
 
     // Reset player position to (0,0)
@@ -77,8 +81,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const endGame = useCallback(() => {
     setGameState('gameOver');
     if (gameLoopIdRef.current) {
-      clearInterval(gameLoopIdRef.current);
+      cancelAnimationFrame(gameLoopIdRef.current);
       gameLoopIdRef.current = null;
+      lastTimeRef.current = null;
     }
 
     // Save score to leaderboard
@@ -101,6 +106,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Reset game state
     setElapsedTime(0);
     setArrows([]);
+    lastTimeRef.current = null;
+    startTimeRef.current = null;
 
     // Reset player position to (0,0)
     const initialPosition = { x: 0, y: 0 };
@@ -121,10 +128,20 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Game loop
   useEffect(() => {
     if (gameState === 'playing') {
-      // Game loop function
-      const gameLoop = () => {
-        // Update elapsed time
-        setElapsedTime(prev => prev + 16); // ~60 FPS
+      // Game loop function using requestAnimationFrame for more accurate timing
+      const gameLoop = (timestamp: number) => {
+        // Initialize start time on first frame
+        if (startTimeRef.current === null) {
+          startTimeRef.current = timestamp;
+          lastTimeRef.current = timestamp;
+        }
+
+        // Calculate elapsed time based on actual timestamps
+        const deltaTime = timestamp - (lastTimeRef.current || timestamp);
+        lastTimeRef.current = timestamp;
+
+        // Update elapsed time based on actual time passed
+        setElapsedTime(prev => prev + deltaTime);
 
         // Spawn arrows
         const currentTime = Date.now();
@@ -215,15 +232,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arrow.position.y <= height + bufferZone
           );
         });
+
+        // Continue the animation loop
+        gameLoopIdRef.current = requestAnimationFrame(gameLoop);
       };
 
-      // Start the game loop
-      gameLoopIdRef.current = setInterval(gameLoop, 16); // ~60 FPS
+      // Start the game loop with requestAnimationFrame
+      gameLoopIdRef.current = requestAnimationFrame(gameLoop);
 
       // Cleanup function
       return () => {
         if (gameLoopIdRef.current) {
-          clearInterval(gameLoopIdRef.current);
+          cancelAnimationFrame(gameLoopIdRef.current);
           gameLoopIdRef.current = null;
         }
       };
