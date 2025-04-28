@@ -56,19 +56,22 @@ export const saveScore = async (username: string, score: number): Promise<void> 
     // Ensure the user has a profile
     await getUsername(); // This will create a profile if it doesn't exist
 
-    // Get the user's highest score
+    // Get the user's best score (highest value = longest survival time)
     const { data: existingScores, error: queryError } = await supabase
       .from('scores')
       .select('id, score')
       .eq('user_id', user.id)
-      .order('score', { ascending: false });
+      .order('score', { ascending: false }); // Descending order - highest score first
 
     if (queryError) {
       console.error('Error querying scores:', queryError);
       throw queryError;
     }
 
+    console.log('Existing scores:', existingScores);
+
     // Check if we should update the score
+    // In our game, higher scores are better (longer survival time)
     const shouldUpdate = !existingScores ||
                          existingScores.length === 0 ||
                          (existingScores.length > 0 && intScore > existingScores[0].score);
@@ -80,38 +83,48 @@ export const saveScore = async (username: string, score: number): Promise<void> 
         console.log(`First score for user, setting to ${intScore}`);
       }
 
-      // Check if we need to insert or update
+      // Instead of trying to update, let's delete the old record and insert a new one
+      // This approach is more reliable when dealing with potential permission issues
       if (existingScores && existingScores.length > 0) {
-        // Update existing score
-        console.log(`Updating existing score record with ID ${existingScores[0].id}`);
-        const { error: updateError } = await supabase
+        console.log(`Found existing score record with ID ${existingScores[0].id}`);
+        console.log(`Old score: ${existingScores[0].score}, New score: ${intScore}`);
+
+        // First, delete the existing record
+        console.log(`Deleting existing score record with ID ${existingScores[0].id}`);
+        const { error: deleteError } = await supabase
           .from('scores')
-          .update({
-            score: intScore,
-            date: new Date().toISOString()
-          })
+          .delete()
           .eq('id', existingScores[0].id);
 
-        if (updateError) {
-          console.error('Error updating score:', updateError);
-          throw updateError;
-        }
-      } else {
-        // Insert new score
-        console.log(`Inserting new score record for user ${user.id}`);
-        const { error: insertError } = await supabase
-          .from('scores')
-          .insert({
-            user_id: user.id,
-            score: intScore,
-            date: new Date().toISOString()
-          });
-
-        if (insertError) {
-          console.error('Error inserting score:', insertError);
-          throw insertError;
+        if (deleteError) {
+          console.error('Error deleting old score:', deleteError);
+          // Continue anyway, try to insert the new score
+        } else {
+          console.log('Successfully deleted old score record');
         }
       }
+
+      // Insert new score (whether we had an old one or not)
+      console.log(`Inserting new score record for user ${user.id}`);
+
+      const insertData = {
+        user_id: user.id,
+        score: intScore,
+        date: new Date().toISOString()
+      };
+      console.log('Insert data:', insertData);
+
+      const { data: insertResult, error: insertError } = await supabase
+        .from('scores')
+        .insert(insertData)
+        .select();
+
+      if (insertError) {
+        console.error('Error inserting score:', insertError);
+        throw insertError;
+      }
+
+      console.log('Insert result:', insertResult);
 
       console.log('Score saved successfully');
     } else {
@@ -126,8 +139,13 @@ export const saveScore = async (username: string, score: number): Promise<void> 
 export const subscribeToLeaderboard = (
   callback: (leaderboard: LeaderboardEntry[]) => void
 ): (() => void) => {
+  console.log('Setting up leaderboard subscription...');
+
   // Initial fetch
-  fetchLeaderboard().then(callback);
+  fetchLeaderboard().then(data => {
+    console.log('Initial leaderboard fetch complete, updating UI');
+    callback(data);
+  });
 
   // Set up real-time subscription
   const subscription = supabase
@@ -135,41 +153,65 @@ export const subscribeToLeaderboard = (
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'scores' },
-      () => {
+      (payload) => {
+        console.log('Received real-time update from Supabase:', payload);
         // When any change happens to scores, fetch the updated leaderboard
-        fetchLeaderboard().then(callback);
+        fetchLeaderboard().then(data => {
+          console.log('Leaderboard updated due to real-time event');
+          callback(data);
+        });
       }
     )
     .subscribe();
 
+  console.log('Leaderboard subscription set up successfully');
+
   // Return unsubscribe function
   return () => {
+    console.log('Unsubscribing from leaderboard updates');
     subscription.unsubscribe();
   };
 };
 
 // Fetch leaderboard data
-const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
+export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   try {
-    // First, get all scores
+    console.log('Fetching leaderboard data...');
+
+    // First, get all scores (sorted by highest score first - longer survival time is better)
     const { data: scores, error: scoresError } = await supabase
       .from('scores')
       .select('id, user_id, score, date')
-      .order('score', { ascending: false })
+      .order('score', { ascending: false }) // Descending order - highest score first
       .limit(100);
 
-    if (scoresError) throw scoresError;
-    if (!scores || scores.length === 0) return [];
+    if (scoresError) {
+      console.error('Error fetching scores:', scoresError);
+      throw scoresError;
+    }
+
+    console.log('Fetched scores:', scores);
+
+    if (!scores || scores.length === 0) {
+      console.log('No scores found');
+      return [];
+    }
 
     // Then, get usernames for each user_id
     const userIds = scores.map(score => score.user_id);
+    console.log('User IDs to fetch:', userIds);
 
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, username')
       .in('id', userIds);
 
-    if (profilesError) throw profilesError;
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      throw profilesError;
+    }
+
+    console.log('Fetched profiles:', profiles);
 
     // Create a map of user_id to username
     const usernameMap = new Map();
@@ -177,12 +219,17 @@ const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
       usernameMap.set(profile.id, profile.username);
     });
 
+    console.log('Username map:', Object.fromEntries(usernameMap));
+
     // Transform the data to match the LeaderboardEntry type
-    return scores.map(item => ({
+    const leaderboardEntries = scores.map(item => ({
       username: usernameMap.get(item.user_id) || 'Unknown User',
       score: Number(item.score), // Ensure score is a number
       date: item.date,
     }));
+
+    console.log('Transformed leaderboard entries:', leaderboardEntries);
+    return leaderboardEntries;
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     return [];

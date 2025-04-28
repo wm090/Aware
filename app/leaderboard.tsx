@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LeaderboardEntry } from '../src/utils/storage';
 import { getUsername, clearUserScore, subscribeToLeaderboard } from '../src/utils/storageManager';
+import { fetchLeaderboard } from '../src/utils/supabaseStorage';
 import { formatTime } from '../src/utils/animation';
 import { useTheme } from '../src/context/ThemeContext';
 import { useAuth } from '../src/context/AuthContext';
@@ -17,14 +18,16 @@ const LeaderboardScreen: React.FC = () => {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const router = useRouter();
   const { theme, isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     loadUsername();
 
     // Subscribe to real-time leaderboard updates
     const unsubscribe = subscribeToLeaderboard(setLeaderboard);
-    setLoading(false);
+
+    // Force a refresh when the component mounts
+    loadLeaderboard();
 
     // Cleanup subscription on unmount
     return () => {
@@ -37,10 +40,22 @@ const LeaderboardScreen: React.FC = () => {
     setCurrentUsername(username);
   };
 
-  const loadLeaderboard = () => {
+  const loadLeaderboard = async () => {
+    console.log('Manually refreshing leaderboard...');
     setLoading(true);
-    // The leaderboard is automatically updated via the subscription
-    setTimeout(() => setLoading(false), 500); // Just for UI feedback
+
+    try {
+      // Fetch the leaderboard data directly
+      const leaderboardData = await fetchLeaderboard();
+      setLeaderboard(leaderboardData);
+      console.log('Leaderboard refreshed successfully:', leaderboardData);
+    } catch (error) {
+      console.error('Error refreshing leaderboard:', error);
+      Alert.alert('Error', 'Failed to refresh leaderboard. Please try again.');
+    } finally {
+      // Delay setting loading to false for better UI feedback
+      setTimeout(() => setLoading(false), 500);
+    }
   };
 
   const handleClearUserScores = async () => {
@@ -65,6 +80,17 @@ const LeaderboardScreen: React.FC = () => {
       ]
     );
 
+    setMenuVisible(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      Alert.alert("Success", "You have been signed out");
+      router.replace('/game');
+    } catch (error) {
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
     setMenuVisible(false);
   };
 
@@ -156,36 +182,45 @@ const LeaderboardScreen: React.FC = () => {
             iconColor="white"
           />
 
-          {/* Only show menu if user is authenticated */}
-          {user ? (
-            <Menu
-              visible={menuVisible}
-              onDismiss={() => setMenuVisible(false)}
-              anchor={
-                <IconButton
-                  icon="dots-vertical"
-                  size={24}
-                  onPress={() => setMenuVisible(true)}
-                  style={styles.headerButton}
-                  iconColor="white"
-                />
-              }
-            >
-              <Menu.Item
-                onPress={handleClearUserScores}
-                title="Clear My Scores"
-                leadingIcon="delete"
+          {/* Menu for all users */}
+          <Menu
+            visible={menuVisible}
+            onDismiss={() => setMenuVisible(false)}
+            anchor={
+              <IconButton
+                icon="dots-vertical"
+                size={24}
+                onPress={() => setMenuVisible(true)}
+                style={styles.headerButton}
+                iconColor="white"
               />
-            </Menu>
-          ) : (
-            <IconButton
-              icon="dots-vertical"
-              size={24}
-              onPress={() => Alert.alert('Sign In Required', 'Please sign in to manage your scores')}
-              style={styles.headerButton}
-              iconColor="white"
-            />
-          )}
+            }
+          >
+            {/* Show different options based on authentication status */}
+            {user ? (
+              <>
+                <Menu.Item
+                  onPress={handleClearUserScores}
+                  title="Clear My Scores"
+                  leadingIcon="delete"
+                />
+                <Menu.Item
+                  onPress={handleSignOut}
+                  title="Sign Out"
+                  leadingIcon="logout"
+                />
+              </>
+            ) : (
+              <Menu.Item
+                onPress={() => {
+                  setMenuVisible(false);
+                  router.push('/auth');
+                }}
+                title="Sign In / Create Account"
+                leadingIcon="login"
+              />
+            )}
+          </Menu>
         </View>
       </View>
 
