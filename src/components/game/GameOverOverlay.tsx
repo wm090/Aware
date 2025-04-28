@@ -1,33 +1,47 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
-import { formatTime } from '../../utils';
+import { useRouter } from 'expo-router';
+import { formatTime } from '../../utils/animation';
 import { useGameContext } from '../../context/GameContext';
 
 const GameOverOverlay: React.FC = () => {
   const { gameState, elapsedTime, resetGame } = useGameContext();
-  
+  const router = useRouter();
+
   // Only show when game is over
   if (gameState !== 'gameOver') {
     return null;
   }
-  
+
   // Format the final time
   const formattedTime = formatTime(elapsedTime);
-  
+
+  const viewLeaderboard = () => {
+    router.push('/leaderboard');
+  };
+
   return (
     <View style={styles.overlay}>
       <View style={styles.container}>
         <Text style={styles.title}>Game Over</Text>
         <Text style={styles.subtitle}>Your time:</Text>
         <Text style={styles.time}>{formattedTime}</Text>
-        <Button 
-          mode="contained" 
+        <Button
+          mode="contained"
           onPress={resetGame}
           style={styles.button}
           labelStyle={styles.buttonLabel}
         >
           Play Again
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={viewLeaderboard}
+          style={styles.button}
+          labelStyle={styles.buttonLabel}
+        >
+          View Leaderboard
         </Button>
       </View>
     </View>

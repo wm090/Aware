@@ -1,21 +1,38 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { StyleSheet, View, Text, PanResponder } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Button } from 'react-native-paper';
+import { Button, IconButton } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 import { GameProvider, useGameContext } from '../src/context/GameContext';
 import PlayerCircle from '../src/components/game/PlayerCircle';
 import Arrow from '../src/components/game/Arrow';
 import TimerDisplay from '../src/components/game/TimerDisplay';
 import GameOverOverlay from '../src/components/game/GameOverOverlay';
+import UsernameModal from '../src/components/game/UsernameModal';
 import { GAME } from '../src/constants';
+import { hasUsername } from '../src/utils/storage';
 
 // Game screen content
 const GameContent: React.FC = () => {
   const { gameState, arrows, startGame, updatePlayerPosition, playerState } = useGameContext();
   const lastPositionRef = useRef(playerState.position);
+  const router = useRouter();
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
 
   // Don't allow movement if game is over
   const isDisabled = gameState === 'gameOver' || gameState === 'idle';
+
+  // Check if username exists when component mounts
+  useEffect(() => {
+    const checkUsername = async () => {
+      const hasUser = await hasUsername();
+      if (!hasUser) {
+        setShowUsernameModal(true);
+      }
+    };
+
+    checkUsername();
+  }, []);
 
   // Update the reference when playerState changes
   useEffect(() => {
@@ -62,9 +79,20 @@ const GameContent: React.FC = () => {
     },
   });
 
+  const handleUsernameComplete = () => {
+    setShowUsernameModal(false);
+  };
+
+  const goToLeaderboard = () => {
+    router.push('/leaderboard');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
+
+      {/* Username modal */}
+      <UsernameModal visible={showUsernameModal} onComplete={handleUsernameComplete} />
 
       {/* Timer display */}
       <TimerDisplay />
@@ -81,6 +109,17 @@ const GameContent: React.FC = () => {
             labelStyle={styles.buttonLabel}
           >
             Start Game
+          </Button>
+
+          {/* Leaderboard button */}
+          <Button
+            mode="outlined"
+            onPress={goToLeaderboard}
+            style={styles.leaderboardButton}
+            labelStyle={styles.buttonLabel}
+            icon="trophy"
+          >
+            Leaderboard
           </Button>
         </View>
       )}
@@ -146,6 +185,11 @@ const styles = StyleSheet.create({
   startButton: {
     width: 200,
     marginTop: 20,
+    marginBottom: 10, // Reduced to make space for leaderboard button
+  },
+  leaderboardButton: {
+    width: 200,
+    marginTop: 10,
     marginBottom: 30, // Add bottom margin to create space for the player circle
   },
   buttonLabel: {
