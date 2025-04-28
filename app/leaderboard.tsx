@@ -216,27 +216,60 @@ const LeaderboardScreen: React.FC = () => {
             onPress={() => {
               // Show different options based on authentication status
               if (user) {
+                // Show a menu with two main options
                 Alert.alert(
                   "Options",
                   "Choose an option",
                   [
                     {
-                      text: "Clear My Scores",
-                      onPress: handleClearUserScores,
-                      style: "destructive"
-                    },
-                    {
-                      text: "Sign Out",
-                      onPress: handleSignOut
-                    },
-                    {
-                      text: "Delete Account",
-                      onPress: handleDeleteAccount,
-                      style: "destructive"
-                    },
-                    {
                       text: "Cancel",
                       style: "cancel"
+                    },
+                    {
+                      text: "Manage Scores",
+                      onPress: () => {
+                        // Show score management options
+                        Alert.alert(
+                          "Manage Scores",
+                          "Choose an option",
+                          [
+                            {
+                              text: "Cancel",
+                              style: "cancel"
+                            },
+                            {
+                              text: "Clear My Scores",
+                              onPress: handleClearUserScores,
+                              style: "destructive"
+                            }
+                          ]
+                        );
+                      }
+                    },
+                    {
+                      text: "Manage Account",
+                      onPress: () => {
+                        // Show account management options
+                        Alert.alert(
+                          "Manage Account",
+                          "Choose an option",
+                          [
+                            {
+                              text: "Cancel",
+                              style: "cancel"
+                            },
+                            {
+                              text: "Sign Out",
+                              onPress: handleSignOut
+                            },
+                            {
+                              text: "Delete Account",
+                              onPress: handleDeleteAccount,
+                              style: "destructive"
+                            }
+                          ]
+                        );
+                      }
                     }
                   ]
                 );
