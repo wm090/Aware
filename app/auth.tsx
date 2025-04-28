@@ -16,7 +16,7 @@ export default function AuthScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const { user, signIn, signUp } = useAuth();
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
 
   // If user is already authenticated, redirect to home
   if (user) {
@@ -61,32 +61,55 @@ export default function AuthScreen() {
         {!isLogin && (
           <TextInput
             label="Username"
+            placeholder="Enter your username"
+            placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
             value={username}
             onChangeText={setUsername}
             style={styles.input}
             autoCapitalize="none"
+            mode="outlined"
+            outlineColor={isDarkMode ? "#9370DB" : undefined}
+            activeOutlineColor={theme.colors.primary}
+            textColor={theme.colors.text}
+            theme={{ colors: { background: theme.colors.background } }}
           />
         )}
 
         <TextInput
           label="Email"
+          placeholder="Enter your email address"
+          placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
           value={email}
           onChangeText={setEmail}
           style={styles.input}
           keyboardType="email-address"
           autoCapitalize="none"
+          mode="outlined"
+          outlineColor={isDarkMode ? "#9370DB" : undefined}
+          activeOutlineColor={theme.colors.primary}
+          textColor={theme.colors.text}
+          theme={{ colors: { background: theme.colors.background } }}
         />
 
         <TextInput
           label="Password"
+          placeholder="Enter your password"
+          placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           style={styles.input}
+          mode="outlined"
+          outlineColor={isDarkMode ? "#9370DB" : undefined}
+          activeOutlineColor={theme.colors.primary}
+          textColor={theme.colors.text}
+          theme={{ colors: { background: theme.colors.background } }}
         />
 
         {error && (
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: isDarkMode ? '#FF6B6B' : 'red' }]}>
+            {error}
+          </Text>
         )}
 
         <CustomButton
@@ -126,6 +149,7 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 15,
+    backgroundColor: 'transparent',
   },
   button: {
     marginTop: 10,
@@ -134,7 +158,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   errorText: {
-    color: 'red',
     marginBottom: 10,
+    fontWeight: 'bold',
   },
 });
