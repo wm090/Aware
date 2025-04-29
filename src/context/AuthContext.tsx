@@ -38,18 +38,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // If user exists, ensure they have a profile
+      if (session?.user) {
+        ensureProfileExists(session.user);
+      }
+      
       setLoading(false);
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // If this is a sign-in or token-refreshed event and we have a user, ensure profile exists
+      if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        await ensureProfileExists(session.user);
+      }
+      
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check and create user profile if it doesn't exist
+  const ensureProfileExists = async (user: User) => {
+    if (!user) return;
+    
+    try {
+      // Check if profile exists
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking profile:', error);
+        return;
+      }
+      
+      // If profile doesn't exist, create it
+      if (!data) {
+        const username = user.user_metadata?.username || `user_${user.id.substring(0, 8)}`;
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: user.id, username }]);
+        
+        if (insertError) {
+          console.error('Error creating profile on login:', insertError);
+        } else {
+          console.log('Profile created successfully on login');
+        }
+      }
+    } catch (error) {
+      console.error('Error in ensureProfileExists:', error);
+    }
+  };
 
   // Sign up function
   const signUp = async (email: string, password: string, username: string) => {
@@ -58,17 +105,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            username: username, // Store username in the auth metadata
+          },
+        },
       });
 
       if (error) throw error;
 
-      // If sign up successful, create a profile
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([{ id: data.user.id, username }]);
-
-        if (profileError) throw profileError;
+      // At this point, the user has been created but might need to confirm email
+      // We'll try to insert the profile, but it's okay if it fails (we'll handle it on first login)
+      if (data?.user) {
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([{ id: data.user.id, username }])
+            .select();
+            
+          if (profileError) {
+            console.log('Profile couldn\'t be created now, will create on first login', profileError);
+            // Don't throw the error - we'll create the profile when they first login
+          }
+        } catch (profileInsertError) {
+          console.log('Error creating profile during signup:', profileInsertError);
+          // Continue with the signup flow - profile will be created on first login
+        }
       }
     } catch (error) {
       console.error('Error signing up:', error);
@@ -109,43 +171,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Deleting account for user:', user.id);
 
-      // First, delete user data from the database
-      // 1. Delete scores
-      const { error: scoresError } = await supabase
-        .from('scores')
-        .delete()
-        .eq('user_id', user.id);
+      // Call our RPC function that handles full account deletion
+      const { data, error } = await supabase
+        .rpc('delete_my_account');
 
-      if (scoresError) {
-        console.error('Error deleting scores:', scoresError);
-        // Continue anyway to try to delete the account
-      } else {
-        console.log('Successfully deleted user scores');
+      if (error) {
+        console.error('Error deleting account:', error);
+        throw error;
       }
 
-      // 2. Delete profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
+      console.log('Account successfully deleted');
+      
+      // No need to manually sign out as the account is gone
+      // but we should clear the local state
+      setUser(null);
+      setSession(null);
 
-      if (profileError) {
-        console.error('Error deleting profile:', profileError);
-        // Continue anyway to try to delete the account
-      } else {
-        console.log('Successfully deleted user profile');
-      }
-
-      // For account deletion, we'll sign out the user
-      // Note: In Supabase, regular users can't delete their own accounts
-      // This would typically require a server-side function or admin action
-      // For this demo, we'll just sign out and clean up their data
-      await signOut();
-
-      console.log('User data deleted and signed out');
-
-      // Return success - the account itself remains but all user data is gone
-      // In a production app, you would have a server-side function to complete the deletion
     } catch (error) {
       console.error('Error deleting account:', error);
       throw error;

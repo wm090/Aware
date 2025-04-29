@@ -36,10 +36,24 @@ export default function AuthScreen() {
         if (!username.trim()) {
           throw new Error('Username is required');
         }
-        await signUp(email, password, username);
-        // After sign up, user might need to verify email depending on your settings
-        Alert.alert('Success', 'Account created! You can now sign in.');
-        setIsLogin(true);
+        
+        try {
+          await signUp(email, password, username);
+          // After sign up, user might need to verify email depending on your settings
+          Alert.alert('Success', 'Account created! Please check your email for verification.');
+          setIsLogin(true);
+        } catch (error: any) {
+          // Check if this is the RLS policy error we're expecting
+          if (error.message?.includes('violates row-level security policy') ||
+              (error.code === '42501' && error.message?.includes('profiles'))) {
+            // Profile will be created on first login, so we can still show success
+            Alert.alert('Success', 'Account created! Please check your email for verification.');
+            setIsLogin(true);
+          } else {
+            // For any other error, show it to the user
+            throw error;
+          }
+        }
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred');

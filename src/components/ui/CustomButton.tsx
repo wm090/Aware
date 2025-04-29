@@ -9,6 +9,7 @@ interface CustomButtonProps {
   mode: 'contained' | 'outlined';
   icon?: string;
   style?: any;
+  textColor?: string;
 }
 
 const CustomButton: React.FC<CustomButtonProps> = ({ 
@@ -16,7 +17,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   title, 
   mode, 
   icon, 
-  style 
+  style,
+  textColor 
 }) => {
   const { theme } = useTheme();
   
@@ -36,7 +38,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
           <IconButton
             icon={icon}
             size={20}
-            iconColor={mode === 'contained' ? 'white' : theme.colors.primary}
+            iconColor={mode === 'contained' ? 'white' : textColor || theme.colors.primary}
             style={styles.icon}
           />
         )}
@@ -44,8 +46,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
           style={[
             styles.text,
             mode === 'contained' 
-              ? [styles.containedText, { color: 'white' }]
-              : [styles.outlinedText, { color: theme.colors.primary }]
+              ? [styles.containedText, { color: textColor || 'white' }]
+              : [styles.outlinedText, { color: textColor || theme.colors.primary }]
           ]}
         >
           {title}

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, PanResponder } from 'react-native';
+import { StyleSheet, View, Text, PanResponder, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { IconButton } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -20,7 +20,7 @@ import { hasUsername } from '../src/utils/storage';
 const GameContent: React.FC = () => {
   const { gameState, arrows, startGame, updatePlayerPosition, playerState } = useGameContext();
   const { theme, isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
   const lastPositionRef = useRef(playerState.position);
   const router = useRouter();
   const [showUsernameModal, setShowUsernameModal] = useState(false);
@@ -98,6 +98,33 @@ const GameContent: React.FC = () => {
   const goToLeaderboard = () => {
     router.push('/leaderboard');
   };
+  
+  // Handle account deletion with confirmation
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert("Success", "Your account has been successfully deleted.");
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              Alert.alert("Error", "Failed to delete your account. Please try again later.");
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
 
   return (
     <View style={[
@@ -145,6 +172,28 @@ const GameContent: React.FC = () => {
               title="Sign In / Create Account"
               icon="account"
             />
+          )}
+
+          {/* Account management options (only shown when user is authenticated) */}
+          {user && (
+            <>
+              <CustomButton
+                mode="outlined"
+                onPress={() => router.push('/auth')}
+                style={styles.accountButton}
+                title="Manage Account"
+                icon="account-cog"
+              />
+              
+              <CustomButton
+                mode="outlined"
+                onPress={handleDeleteAccount}
+                style={styles.deleteButton}
+                title="Delete Account"
+                icon="account-remove"
+                textColor={isDarkMode ? "#FF6B6B" : "red"}
+              />
+            </>
           )}
         </View>
       )}
@@ -222,7 +271,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 30, // Add bottom margin to create space for the player circle
   },
-
+  accountButton: {
+    width: 200,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  deleteButton: {
+    width: 200,
+    marginTop: 10,
+    marginBottom: 30,
+  },
   touchOverlay: {
     position: 'absolute',
     top: 0,
