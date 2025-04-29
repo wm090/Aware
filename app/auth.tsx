@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
-import { Redirect } from 'expo-router';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
+import { Text, TextInput, IconButton } from 'react-native-paper';
+import { Redirect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
@@ -14,6 +14,7 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const { user, signIn, signUp } = useAuth();
   const { theme, isDarkMode } = useTheme();
@@ -37,7 +38,7 @@ export default function AuthScreen() {
         }
         await signUp(email, password, username);
         // After sign up, user might need to verify email depending on your settings
-        alert('Account created! You can now sign in.');
+        Alert.alert('Success', 'Account created! You can now sign in.');
         setIsLogin(true);
       }
     } catch (error) {
@@ -47,84 +48,125 @@ export default function AuthScreen() {
     }
   };
 
+  // Calculate contrasting colors for better visibility in both modes
+  const labelColor = isDarkMode ? '#BFACEF' : theme.colors.primary; // Light purple in dark mode
+  const placeholderColor = isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.5)"; // Higher opacity in dark mode
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
-      <View style={styles.formContainer}>
-        <Text style={[styles.title, { color: theme.colors.primary }]}>
-          {isLogin ? 'Sign In' : 'Sign Up'}
-        </Text>
+      
+      {/* Back button */}
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.replace('/')}
+      >
+        <IconButton
+          icon="arrow-left"
+          iconColor={theme.colors.primary}
+          size={24}
+        />
+        <Text style={[styles.backText, { color: theme.colors.primary }]}>Back</Text>
+      </TouchableOpacity>
 
-        {!isLogin && (
+      <View style={styles.contentContainer}>
+        <View style={styles.formContainer}>
+          <Text style={[styles.title, { color: theme.colors.primary }]}>
+            {isLogin ? 'Sign In' : 'Sign Up'}
+          </Text>
+
+          {!isLogin && (
+            <TextInput
+              label="Username"
+              placeholder="Enter your username"
+              placeholderTextColor={placeholderColor}
+              value={username}
+              onChangeText={setUsername}
+              style={styles.input}
+              autoCapitalize="none"
+              mode="outlined"
+              outlineColor={isDarkMode ? "#9370DB" : undefined}
+              activeOutlineColor={theme.colors.primary}
+              textColor={theme.colors.text}
+              theme={{ 
+                colors: { 
+                  background: theme.colors.background,
+                  placeholder: placeholderColor,
+                  text: theme.colors.text,
+                  onSurfaceVariant: labelColor  // This controls the label color
+                } 
+              }}
+            />
+          )}
+
           <TextInput
-            label="Username"
-            placeholder="Enter your username"
-            placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
-            value={username}
-            onChangeText={setUsername}
+            label="Email"
+            placeholder="Enter your email address"
+            placeholderTextColor={placeholderColor}
+            value={email}
+            onChangeText={setEmail}
             style={styles.input}
+            keyboardType="email-address"
             autoCapitalize="none"
             mode="outlined"
             outlineColor={isDarkMode ? "#9370DB" : undefined}
             activeOutlineColor={theme.colors.primary}
             textColor={theme.colors.text}
-            theme={{ colors: { background: theme.colors.background } }}
+            theme={{ 
+              colors: { 
+                background: theme.colors.background,
+                placeholder: placeholderColor,
+                text: theme.colors.text,
+                onSurfaceVariant: labelColor  // This controls the label color
+              } 
+            }}
           />
-        )}
 
-        <TextInput
-          label="Email"
-          placeholder="Enter your email address"
-          placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          mode="outlined"
-          outlineColor={isDarkMode ? "#9370DB" : undefined}
-          activeOutlineColor={theme.colors.primary}
-          textColor={theme.colors.text}
-          theme={{ colors: { background: theme.colors.background } }}
-        />
+          <TextInput
+            label="Password"
+            placeholder="Enter your password"
+            placeholderTextColor={placeholderColor}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.input}
+            mode="outlined"
+            outlineColor={isDarkMode ? "#9370DB" : undefined}
+            activeOutlineColor={theme.colors.primary}
+            textColor={theme.colors.text}
+            theme={{ 
+              colors: { 
+                background: theme.colors.background,
+                placeholder: placeholderColor,
+                text: theme.colors.text,
+                onSurfaceVariant: labelColor  // This controls the label color
+              } 
+            }}
+          />
 
-        <TextInput
-          label="Password"
-          placeholder="Enter your password"
-          placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-          mode="outlined"
-          outlineColor={isDarkMode ? "#9370DB" : undefined}
-          activeOutlineColor={theme.colors.primary}
-          textColor={theme.colors.text}
-          theme={{ colors: { background: theme.colors.background } }}
-        />
+          {error && (
+            <Text style={[styles.errorText, { color: isDarkMode ? '#FF6B6B' : 'red' }]}>
+              {error}
+            </Text>
+          )}
 
-        {error && (
-          <Text style={[styles.errorText, { color: isDarkMode ? '#FF6B6B' : 'red' }]}>
-            {error}
-          </Text>
-        )}
+          <CustomButton
+            mode="contained"
+            onPress={handleAuth}
+            style={styles.button}
+            title={isLogin ? 'Sign In' : 'Sign Up'}
+          />
 
-        <CustomButton
-          mode="contained"
-          onPress={handleAuth}
-          style={styles.button}
-          title={isLogin ? 'Sign In' : 'Sign Up'}
-        />
-
-        <CustomButton
-          mode="outlined"
-          onPress={() => setIsLogin(!isLogin)}
-          style={styles.switchButton}
-          title={isLogin ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
-        />
+          <CustomButton
+            mode="outlined"
+            onPress={() => setIsLogin(!isLogin)}
+            style={styles.switchButton}
+            title={isLogin ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
+          />
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -133,8 +175,12 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     padding: 20,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   formContainer: {
     width: '100%',
@@ -160,5 +206,18 @@ const styles = StyleSheet.create({
   errorText: {
     marginBottom: 10,
     fontWeight: 'bold',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  backText: {
+    marginLeft: -8, // Adjust the spacing between icon and text
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
