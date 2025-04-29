@@ -7,7 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import CustomButton from '../ui/CustomButton';
 
 const GameOverOverlay: React.FC = () => {
-  const { gameState, elapsedTime, resetGame } = useGameContext();
+  const { gameState, elapsedTime, resetGame, startGame } = useGameContext();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
 
@@ -22,6 +22,19 @@ const GameOverOverlay: React.FC = () => {
   const viewLeaderboard = () => {
     router.push('/leaderboard');
   };
+  
+  const goToHome = () => {
+    router.replace('/');
+  };
+  
+  const handlePlayAgain = () => {
+    // Instead of just resetting, let's reset and start the game immediately
+    resetGame();
+    // Small delay to ensure reset is complete before starting
+    setTimeout(() => {
+      startGame();
+    }, 50);
+  };
 
   return (
     <View style={[
@@ -35,17 +48,30 @@ const GameOverOverlay: React.FC = () => {
         <Text style={[styles.title, { color: 'red' }]}>Game Over</Text>
         <Text style={[styles.subtitle, { color: theme.colors.text }]}>Your time:</Text>
         <Text style={[styles.time, { color: theme.colors.text }]}>{formattedTime}</Text>
-        <CustomButton
-          mode="contained"
-          onPress={resetGame}
-          style={styles.button}
-          title="Play Again"
-        />
+        
+        <View style={styles.buttonRow}>
+          <CustomButton
+            mode="contained"
+            onPress={handlePlayAgain}
+            style={styles.rowButton}
+            title="Play Again"
+            icon="refresh"
+          />
+          <CustomButton
+            mode="contained"
+            onPress={goToHome}
+            style={styles.rowButton}
+            title="Home"
+            icon="home"
+          />
+        </View>
+        
         <CustomButton
           mode="outlined"
           onPress={viewLeaderboard}
           style={styles.button}
           title="View Leaderboard"
+          icon="trophy"
         />
       </View>
     </View>
@@ -89,6 +115,14 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     marginTop: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  rowButton: {
+    flex: 1,
   },
 });
 
