@@ -20,7 +20,7 @@ import { hasUsername } from '../src/utils/storage';
 const GameContent: React.FC = () => {
   const { gameState, arrows, startGame, updatePlayerPosition, playerState } = useGameContext();
   const { theme, isDarkMode } = useTheme();
-  const { user, deleteAccount } = useAuth();
+  const { user, deleteAccount, signOut } = useAuth();
   const lastPositionRef = useRef(playerState.position);
   const router = useRouter();
   const [showUsernameModal, setShowUsernameModal] = useState(false);
@@ -125,6 +125,39 @@ const GameContent: React.FC = () => {
       ]
     );
   };
+  
+  // Handle sign out functionality
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      Alert.alert("Success", "You have been signed out");
+    } catch (error) {
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
+  };
+  
+  // Handle account management options
+  const handleManageAccount = () => {
+    Alert.alert(
+      "Manage Account",
+      "Choose an option",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Sign Out",
+          onPress: handleSignOut
+        },
+        {
+          text: "Delete Account",
+          onPress: handleDeleteAccount,
+          style: "destructive"
+        }
+      ]
+    );
+  };
 
   return (
     <View style={[
@@ -176,24 +209,13 @@ const GameContent: React.FC = () => {
 
           {/* Account management options (only shown when user is authenticated) */}
           {user && (
-            <>
-              <CustomButton
-                mode="outlined"
-                onPress={() => router.push('/auth')}
-                style={styles.accountButton}
-                title="Manage Account"
-                icon="account-cog"
-              />
-              
-              <CustomButton
-                mode="outlined"
-                onPress={handleDeleteAccount}
-                style={styles.deleteButton}
-                title="Delete Account"
-                icon="account-remove"
-                textColor={isDarkMode ? "#FF6B6B" : "red"}
-              />
-            </>
+            <CustomButton
+              mode="outlined"
+              onPress={handleManageAccount}
+              style={styles.accountButton}
+              title="Manage Account"
+              icon="account-cog"
+            />
           )}
         </View>
       )}
